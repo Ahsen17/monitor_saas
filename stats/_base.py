@@ -28,7 +28,7 @@ from enum import Enum
 from typing import Any, Dict, List, Tuple
 
 
-class MetricTypeEnum(Enum):
+class SeriesTypeEnum(Enum):
     GAUGE = "gauge"
     COUNTER = "counter"
     SUMMARY = "summary"
@@ -47,7 +47,7 @@ class MetricTypeEnum(Enum):
         return list(cls._value2member_map_.values())
 
 
-class Metric(object):
+class Series(object):
     def __init__(self, metric: str, value: float, tags: dict):
         self.metric = metric
         self.value = value
@@ -61,12 +61,12 @@ class Metric(object):
         }
     
     @classmethod
-    def load(cls, data: Dict[str, Any]) -> "Metric":
+    def load(cls, data: Dict[str, Any]) -> "Series":
         return cls(data["metric"], data["value"], data["tags"])
     
 
-class Metrics(object):
-    def __init__(self, metrics: List[Metric]):
+class SeriesArray(object):
+    def __init__(self, metrics: List[Series]):
         self.metrics = metrics
 
     def opentsdb(self) -> List[Dict[str, Any]]:
@@ -84,7 +84,7 @@ class Metrics(object):
         
         _content = ""
         for _metric, _seriesLst in _mCache.items():
-            _help, _type = description.get(metric.metric, ("No description of metric.", "gauge"))
+            _help, _type = description.get(metric.metric, ("No description of metric.", SeriesTypeEnum.GAUGE.value))
             _content += f"# HELP {_metric} {_help} \n"
             _content += f"# TYPE {_metric} {_type}\n"
             for _series in _seriesLst:
@@ -94,9 +94,9 @@ class Metrics(object):
         return _content
 
     @classmethod
-    def _loadPrometheus(cls, content: str) -> "Metrics":
+    def _loadPrometheus(cls, content: str) -> "SeriesArray":
         _lines = content.split("\n")
-        _metrics = []
+        _seriesArr = []
 
         # for example:
         # cpu_usage{ident="0",tags="a,b,c"} 0.1
@@ -114,20 +114,20 @@ class Metrics(object):
                 _tagKeys.append(_tag.split(",")[-1])
                 _tagVals.append(_tag[_tag.find('"')+1:_tag.rfind('"')])
             _tags = dict(zip(_tagKeys, _tagVals))
-            _metrics.append(Metric(_metric, float(_value), _tags))
+            _seriesArr.append(Series(_metric, float(_value), _tags))
 
-        return cls(_metrics)
+        return cls(_seriesArr)
 
     @classmethod
-    def _loadOpentsdb(cls, content: List[dict]) -> "Metrics":
-        _metrics = []
+    def _loadOpentsdb(cls, content: List[dict]) -> "SeriesArray":
+        _seriesArr = []
         for _metric in content:
-            _metrics.append(Metric.load(_metric))
+            _seriesArr.append(Series.load(_metric))
 
-        return cls(_metrics)
+        return cls(_seriesArr)
     
     @classmethod
-    def load(cls, content: Any, format: str) -> "Metrics":
+    def load(cls, content: Any, format: str) -> "SeriesArray":
         """
         Load metrics from different formats.
         Args:
