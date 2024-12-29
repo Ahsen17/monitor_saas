@@ -1,4 +1,5 @@
-/log/*
+/.venv/
+/log/
 *__pycache__
 
 db.sqlite3

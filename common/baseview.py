@@ -33,6 +33,7 @@ class ResourceViewMgr(View):
             "HTTP_REQUEST": None,
             "METHOD": "",
             "QUERY_STRING": "",
+            "PARAMS": {},
         }
 
         self._result = {}
@@ -47,7 +48,7 @@ class ResourceViewMgr(View):
         self._META["METHOD"] = request.method
         self._META["QUERY_STRING"] = request.path
 
-        return self._requestDistributes(request.path, *args, **kwargs)
+        return self._requestDistributes(*args, **kwargs)
     
     def resp(self, code=1001, status=False, data=None, message=""):
         self._result.update({k: v for k, v in locals().items() if k!= "self"})
@@ -76,6 +77,8 @@ class ResourceViewMgr(View):
             return _response(**self._result)
         
         try:
+            _req = self._META['HTTP_REQUEST']
+            self._META['PARAMS'] = json.loads(_req.body.decode()) if _req.body else _req.GET.dict()
             getattr(self, operate)(resource, itemId, *args, **kwargs)
         except Exception as e:
             self.resp(code=CODE.INTERNAL_SERVER_ERROR, message=str(e))

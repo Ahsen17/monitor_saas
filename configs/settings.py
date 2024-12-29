@@ -201,8 +201,17 @@ LOGGING = {
             'formatter': 'standard',
             'encoding': 'utf-8',
         },
+        'debug': {
+            'class': 'common.utils.log.InterceptTimedRotatingFileHandler',
+            'filename': os.path.join(LOG_ROOT, 'debug.log'),
+            'when': "D",
+            'interval': 1,
+            'backupCount': 1,
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        },
         'db': {
-            'class': 'common.utils.log.InterceptTimedRotatingFileHandler', # 这个路径看你本地放在哪里
+            'class': 'common.utils.log.InterceptTimedRotatingFileHandler',
             'filename': os.path.join(LOG_ROOT, 'database.log'),
             'when': "D",
             'interval': 1,
@@ -212,7 +221,7 @@ LOGGING = {
             'logging_levels': ['debug']  
         },
         'celery': {
-            'class': 'common.utils.log.InterceptTimedRotatingFileHandler', # 这个路径看你本地放在哪里
+            'class': 'common.utils.log.InterceptTimedRotatingFileHandler',
             'filename': os.path.join(LOG_ROOT, 'celery.log'),
             'when': "D",
             'interval': 1,
@@ -243,6 +252,11 @@ LOGGING = {
             'handlers': ['servers'],
             'propagate': False,
             'level': "INFO"
+        },
+        'django.debug': {
+            'handlers': ['debug'],
+            'propagate': False,
+            'level': "DEBUG"
         },
     }
 }

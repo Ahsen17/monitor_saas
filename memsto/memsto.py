@@ -48,7 +48,7 @@ class _memSto(object):
         return False
     
     def delEle(self, index: int) -> Any:
-        assert index < -self._arrLen or index >= self._arrLen, OutOfBounds()
+        assert index >= -self._arrLen and index < self._arrLen, OutOfBounds()
 
         _array = self._arr
         index = index if index>=0 else index + self._arrLen
@@ -58,7 +58,7 @@ class _memSto(object):
         return res
     
     def getEle(self, index: int) -> Any:
-        assert index < -self._arrLen or index >= self._arrLen, OutOfBounds()
+        assert index >= -self._arrLen and index < self._arrLen, OutOfBounds()
         return copy.deepcopy(self._arr[index])
     
     def getLen(self) -> int:
@@ -101,7 +101,7 @@ class SafetyCache(UnsafetyCache, Lockable):
         super().__init__()
 
 
-class MultiSegmentSaftyCache(object):
+class MultiSegmentSafetyCache(object):
     def __init__(self, capacity: int=5):
         self._capacity = capacity  # default 5 buckets
         self._caches = [SafetyCache() for _ in range(capacity)]
@@ -131,17 +131,17 @@ class MultiSegmentSaftyCache(object):
         return False
     
     def delEle(self, index: int) -> Any:
-        assert index < -self._arrLen or index >= self._arrLen, OutOfBounds()
+        assert index >= -self._arrLen and index < self._arrLen, OutOfBounds()
 
-        segment = self._segment(index=self._arrLen)
+        segment = self._segment(index=index)
         ele = segment.delEle(index // self._capacity)
         self._arrLen -= 1
         return ele
     
     def getEle(self, index: int) -> Any:
-        assert index < -self._arrLen or index >= self._arrLen, OutOfBounds()
+        assert index >= -self._arrLen and index < self._arrLen, OutOfBounds()
 
-        segment = self._segment(index=self._arrLen)
+        segment = self._segment(index=index)
         return segment.getEle(index // self._capacity)
     
     def getLen(self) -> int:
@@ -161,6 +161,10 @@ class MultiSegmentSaftyCache(object):
         if val:
             self._dicSize -= 1
         return val
+    
+    def getVal(self, key: str) -> Any:
+        segment = self._segment(key=key)
+        return segment.getVal(key)
     
     def getSize(self) -> int:
         """return entries size"""

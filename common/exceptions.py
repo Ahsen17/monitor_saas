@@ -7,7 +7,7 @@ class ConfigParseError(ServerError):
 
 
 class OutOfBounds(ValueError):
-    def __init__(self, message: str="Index out of edge."):
+    def __init__(self, message: str="Index out of range."):
         super().__init__(message)
 
 
