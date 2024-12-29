@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from common.exceptions import ConfigParseError
 
 
@@ -11,7 +12,7 @@ class TomlParser(object):
         except:
             raise ConfigParseError(f"Failed to parse TOML file: {filename}")
     
-    def get(self, part: str, key: str="", default=None):
+    def get(self, part: str, key: str="", default=None) -> Any:
         if part not in self._settings:
             return default
         if not key:
@@ -20,5 +21,5 @@ class TomlParser(object):
             return default
         return self._settings[part][key]
     
-    def all(self):
+    def all(self) -> Dict:
         return self._settings

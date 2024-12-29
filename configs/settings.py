@@ -13,17 +13,21 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 import os
 from pathlib import Path
 
+from configs.config import *
 from common.utils.parsers import TomlParser
 from register import apps
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+from django.core.management.commands.runserver import Command
+
 
 # ===============================================
-# environment virables
+# service configurations 
 # ===============================================
-CONFIGS = TomlParser(os.path.join(BASE_DIR, 'configs/default.conf'))
-
+serviceConf = ServiceConfig()
+runtimeEnv = serviceConf.environment
+os.environ.setdefault('RUNTIME_ENV', runtimeEnv)
+Command.default_addr = serviceConf.host
+Command.default_port = serviceConf.port
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -82,8 +86,17 @@ WSGI_APPLICATION = 'wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+mysqlConf = MysqlConfig()
 DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': mysqlConf.host,
+        'PORT': mysqlConf.port,
+        'NAME': mysqlConf.database,
+        'USER': mysqlConf.user,
+        'PASSWORD': mysqlConf.password
+    },
+    'standalone': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
@@ -133,14 +146,20 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # ===============================================
 # cache configurations 
 # ===============================================
 
+redisConf = RedisConfig()
+
+CACHE_BROKER = f"redis://{redisConf.username}:{redisConf.password}" + \
+    f"@{redisConf.host}:{redisConf.port}/{redisConf.database}"
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://:redis@127.0.0.1:6379/1",
+        "LOCATION": CACHE_BROKER,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "CONNECTION_POOL_KWARGS": {"max_connections": 100},
