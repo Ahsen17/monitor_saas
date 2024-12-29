@@ -24,7 +24,7 @@ class _response(object):
 
 
 class ResourceViewMgr(View):
-
+    _VERSION = "v1"
     _PERMITTED_METHODS = ["GET", "POST", "PUT", "DELETE"]
 
     def __init__(self, *args, **kwargs):
@@ -37,8 +37,6 @@ class ResourceViewMgr(View):
         }
 
         self._result = {}
-
-        self.version = "v1"
 
         super(ResourceViewMgr, self).__init__(*args, **kwargs)
 
@@ -68,6 +66,10 @@ class ResourceViewMgr(View):
             return _response(**self._result)
         
         version = qStrs[1]
+        if version != self._VERSION:
+            self.resp(code=CODE.BAD_REQUEST, message=f"Version [{version}] not supported.")
+            return _response(**self._result)
+
         resource = qStrs[2]
         operate = qStrs[3]
         itemId = qStrs[4] if len(qStrs) > 4 else None
@@ -85,4 +87,17 @@ class ResourceViewMgr(View):
         return _response(**self._result)
 
         
+class ResourceViewMgrV2(ResourceViewMgr):
+    _VERSION = "v2"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _requestDistributes(self, *args, **kwargs):
+        # TODO: v2 new features
+        pass
+
+
+# TODO: v3 add django rest_framework
+class ResourceViewMgrV3:
+    pass
