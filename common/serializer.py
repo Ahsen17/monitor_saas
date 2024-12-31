@@ -3,6 +3,10 @@ from typing import Dict
 
 
 class JsonSerializable:
+    """
+    refactor __dict__ while implement
+    """
+
     def toJson(self) -> str:
         return json.dumps(self.__dict__)
 
@@ -12,7 +16,7 @@ class JsonSerializable:
             return {}
         
         try:
-            jsonDic = json.loads(jsonStr)
+            jsonObj = json.loads(jsonStr)
         except json.JSONDecodeError:
             return {}
-        return cls(**jsonDic)
+        return cls(**jsonObj)

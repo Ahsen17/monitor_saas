@@ -1,5 +1,9 @@
 /.venv/
+/.vscode/
+
 /log/
+/qwenapi/
+
 *__pycache__
 
 db.sqlite3
