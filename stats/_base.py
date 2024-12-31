@@ -107,13 +107,33 @@ class SeriesArray(object):
             _series, _value = line.split(" ")
             _metric = _series.split("{")[0]
             _tagsLine = _series.split("{")[1].split("}")[0]
-            _tagKeys = []
-            _tagVals = []
-            for _tag in _tagsLine.split("="):
-                # TODO: comes a bug, generate new tags which are not needed.
-                _tagKeys.append(_tag.split(",")[-1])
-                _tagVals.append(_tag[_tag.find('"')+1:_tag.rfind('"')])
-            _tags = dict(zip(_tagKeys, _tagVals))
+            if '{' in _tagsLine and '}' in _tagsLine:
+                _tags = _tagsLine.split('{')[1].split('}')[0]
+            else:
+                _tags = ''
+            
+            _p, _flag = 0, False
+            _keyLst, _valLst = [], []
+            for idx, c in enumerate(_tags):
+                if idx < _p: continue
+                if _p >= len(_tags): break
+                if c == '=':
+                    _keyLst.append(_tags[_p:idx])
+                    _p = idx + 1
+                    continue
+                if c == '"':
+                    if not _flag:
+                        _p = idx + 1
+                        _flag = True
+                        continue
+                    else:
+                        _valLst.append(_tags[_p:idx])
+                        _p = idx + 2
+                        _flag = False
+                        continue
+            
+            _tags = {k: v for k,v in zip(_keyLst, _valLst)}
+            
             _seriesArr.append(Series(_metric, float(_value), _tags))
 
         return cls(_seriesArr)
