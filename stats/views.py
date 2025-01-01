@@ -1,10 +1,10 @@
-import json
+import gzip
 import os
 from django.http import HttpResponse
 
 from configs.config import BASE_DIR, CONFIGS
 from common.logger import djangoLogger as logger
-from common.baseview import CODE, ResourceViewMgr
+from stats.utils import stats
 
 # Create your views here.
 
@@ -15,4 +15,11 @@ def version(request):
 
 
 def metrics(request):
-    return HttpResponse("Welcome to SysStat Metrics!")
+    _stats = stats(format_="prometheus", realTime=True)
+    # return gzip compressed response
+    response = HttpResponse(
+        content=gzip.compress(_stats.encode("utf-8")),
+        content_type="text/plain"
+    )
+    response["Content-Encoding"] = "gzip"
+    return response

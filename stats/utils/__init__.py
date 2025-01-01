@@ -17,6 +17,7 @@ class _baseCollector(object):
         pass
 
 
+# TODO: comes a bug, cannot generate collector instances
 Collectors = [_cls() for _cls in _baseCollector.__subclasses__()]
 
 
