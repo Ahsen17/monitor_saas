@@ -25,7 +25,8 @@ sys_cpu_user{host="web01",instance="localhost:9090"} 10.0
 
 
 from enum import Enum
-from typing import Any, Dict, List, Tuple
+import json
+from typing import Any, Dict, List, Tuple, Union
 
 
 class SeriesTypeEnum(Enum):
@@ -48,7 +49,7 @@ class SeriesTypeEnum(Enum):
 
 
 class Series(object):
-    def __init__(self, metric: str, value: float, tags: dict):
+    def __init__(self, metric: str, value: Union[int, float], tags: dict):
         self.metric = metric
         self.value = value
         self.tags = tags
@@ -66,30 +67,40 @@ class Series(object):
     
 
 class SeriesArray(object):
-    def __init__(self, metrics: List[Series]):
-        self.metrics = metrics
+    def __init__(self, metrics: List[Series]=[]):
+        self._metrics = metrics
 
-    def opentsdb(self) -> List[Dict[str, Any]]:
-        return [m.__dict__() for m in self.metrics]
+    def append(self, metric: Series):
+        self._metrics.append(metric)
+
+    def extend(self, metrics: List[Series]):
+        self._metrics.extend(metrics)
+
+    def opentsdb(self) -> str:
+        return json.dumps([m.__dict__() for m in self._metrics])
     
     def prometheus(
         self,
         description: Dict[str, Tuple[str, str]] = {}
     ) -> str:
+        """
+        :param description:
+            {"metric": ("# HELP", "# TYPE")}
+        """
         _mCache = {}
-        for metric in self.metrics:
+        for metric in self._metrics:
             if metric.metric not in _mCache:
                 _mCache[metric.metric] = []
             _mCache[metric.metric].append(metric)
         
         _content = ""
         for _metric, _seriesLst in _mCache.items():
-            _help, _type = description.get(metric.metric, ("No description of metric.", SeriesTypeEnum.GAUGE.value))
-            _content += f"# HELP {_metric} {_help} \n"
-            _content += f"# TYPE {_metric} {_type}\n"
-            for _series in _seriesLst:
-                _tags = ",".join([f'{k}="{v}"' for k, v in _series.tags.items()])
-                _content += f"{_series.metric}{{{_tags}}} {_series.value}\n"
+            help, type_ = description.get(metric.metric, ("No description of metric.", SeriesTypeEnum.GAUGE.value))
+            _content += f"# HELP {_metric} {help} \n"
+            _content += f"# TYPE {_metric} {type_}\n"
+            for series in _seriesLst:
+                tags = ",".join([f'{k}="{v}"' for k, v in series.tags.items()])
+                _content += f"{series.metric}{{{tags}}} {series.value}\n"
 
         return _content
 
@@ -104,42 +115,42 @@ class SeriesArray(object):
         for line in _lines:
             if line.startswith("#"):
                 continue
-            _series, _value = line.split(" ")
-            _metric = _series.split("{")[0]
-            _tagsLine = _series.split("{")[1].split("}")[0]
+            series, value = line.split(" ")
+            metric = series.split("{")[0]
+            _tagsLine = series.split("{")[1].split("}")[0]
             if '{' in _tagsLine and '}' in _tagsLine:
-                _tags = _tagsLine.split('{')[1].split('}')[0]
+                tags = _tagsLine.split('{')[1].split('}')[0]
             else:
-                _tags = ''
+                tags = ''
             
-            _p, _flag = 0, False
-            _keyLst, _valLst = [], []
-            for idx, c in enumerate(_tags):
-                if idx < _p: continue
-                if _p >= len(_tags): break
+            p, flag = 0, False
+            keyLst, valLst = [], []
+            for idx, c in enumerate(tags):
+                if idx < p: continue
+                if p >= len(tags): break
                 if c == '=':
-                    _keyLst.append(_tags[_p:idx])
-                    _p = idx + 1
+                    keyLst.append(tags[p:idx])
+                    p = idx + 1
                     continue
                 if c == '"':
-                    if not _flag:
-                        _p = idx + 1
-                        _flag = True
+                    if not flag:
+                        p = idx + 1
+                        flag = True
                         continue
                     else:
-                        _valLst.append(_tags[_p:idx])
-                        _p = idx + 2
-                        _flag = False
+                        valLst.append(tags[p:idx])
+                        p = idx + 2
+                        flag = False
                         continue
             
-            _tags = {k: v for k,v in zip(_keyLst, _valLst)}
+            tags = {k: v for k,v in zip(keyLst, valLst)}
             
-            _seriesArr.append(Series(_metric, float(_value), _tags))
+            _seriesArr.append(Series(metric, float(value), tags))
 
         return cls(_seriesArr)
 
     @classmethod
-    def _loadOpentsdb(cls, content: List[dict]) -> "SeriesArray":
+    def _loadOpentsdb(cls, content: List[Dict]) -> "SeriesArray":
         _seriesArr = []
         for _metric in content:
             _seriesArr.append(Series.load(_metric))
@@ -147,7 +158,7 @@ class SeriesArray(object):
         return cls(_seriesArr)
     
     @classmethod
-    def load(cls, content: Any, format: str) -> "SeriesArray":
+    def load(cls, content: Union[str, List], format_: str) -> "SeriesArray":
         """
         Load metrics from different formats.
         Args:
@@ -158,9 +169,9 @@ class SeriesArray(object):
         Raises:
             ValueError: if the format is not supported.
         """
-        if format == "prometheus":
+        if format_ == "prometheus":
             return cls._loadPrometheus(content)
-        elif format == "opentsdb":
+        elif format_ == "opentsdb":
             return cls._loadOpentsdb(content)
         else:
             raise ValueError(f"Unsupported format: {format}")
