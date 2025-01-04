@@ -26,6 +26,14 @@ def TestUnsafetyCache():
         log.error(f"TestUnsafetyCache failed: {e}, \n {traceback.format_exc()}")
 
 
+def TestCacheIterator():
+    cache = UnsafetyCache()
+    cache.addEle(1)
+    cache.addEle(2)
+    for ele in cache:
+        log.debug(ele)
+
+
 def TestSafetyCache():
     pass
 

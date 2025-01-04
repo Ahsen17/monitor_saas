@@ -1,7 +1,9 @@
-from django.shortcuts import render
+from django.http import HttpResponse
 
-from common.baseview import ResourceViewMgr
-from memsto.memsto_test import TestMultiSegmentSafetyCache, TestUnsafetyCache
 
 # Create your views here.
 
+def TestIterator(req):
+    from memsto.memsto_test import TestCacheIterator as tci
+    tci()
+    return HttpResponse("TestIterator")

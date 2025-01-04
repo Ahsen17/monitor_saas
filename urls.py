@@ -17,7 +17,8 @@ from django.contrib import admin
 from django.urls import path
 
 from router.urls import urlpatterns as routes
+from router.urls_tests import urlpatterns as routes_tests
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-] + routes
+] + routes + routes_tests

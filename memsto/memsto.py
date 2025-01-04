@@ -11,6 +11,7 @@ import threading
 from typing import Any
 
 from common.exceptions import OutOfBounds, LeakageOfArgument
+from common.utils.iterator import ListIterator
 
 
 class Lockable(object):
@@ -33,12 +34,13 @@ class Lockable(object):
         return attr
 
 
-class _memSto(object):
+class _memSto(ListIterator):
     def __init__(self):
         self._arr = []
+        self._dic = {}
         self._arrLen = 0
-        self._dict = {}
         self._dicSize = 0
+        self._index = 0
 
     def addEle(self, ele: Any) -> bool:
         if ele:
@@ -71,29 +73,29 @@ class _memSto(object):
         """
         if not key:
             return False
-        if key not in self._dict:
+        if key not in self._dic:
             self._dicSize += 1
-        self._dict[key] = val
+        self._dic[key] = val
         return True
     
     def delEntry(self, key: str) -> Any:
-        if key in self._dict:
-            tmp = copy.deepcopy(self._dict[key])
-            del self._dict[key]
+        if key in self._dic:
+            tmp = copy.deepcopy(self._dic[key])
+            del self._dic[key]
             self._dicSize -= 1
             return tmp
         return None
     
     def getVal(self, key: str) -> Any:
-        if key in self._dict:
-            return copy.deepcopy(self._dict[key])
+        if key in self._dic:
+            return copy.deepcopy(self._dic[key])
         return None
     
     def getKeys(self) -> list:
-        return copy.deepcopy(list(self._dict.keys()))
+        return copy.deepcopy(list(self._dic.keys()))
     
     def getVals(self) -> list:
-        return copy.deepcopy(list(self._dict.values()))
+        return copy.deepcopy(list(self._dic.values()))
     
     def getSize(self) -> int:
         """return entries size"""
