@@ -54,13 +54,6 @@ class Series(object):
         self.value = value
         self.tags = tags
     
-    def __dict__(self):
-        return {
-            "metric": self.metric,
-            "value": self.value,
-            "tags": self.tags
-        }
-    
     @classmethod
     def load(cls, data: Dict[str, Any]) -> "Series":
         return cls(data["metric"], data["value"], data["tags"])
@@ -77,7 +70,11 @@ class SeriesArray(object):
         self._metrics.extend(metrics)
 
     def opentsdb(self) -> str:
-        return json.dumps([m.__dict__() for m in self._metrics])
+        return json.dumps([{
+            "metric": m.metric,
+            "value": m.value,
+            "tags": m.tags
+        } for m in self._metrics])
     
     def prometheus(
         self,

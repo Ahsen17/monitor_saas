@@ -66,10 +66,14 @@ class _memSto(object):
         return self._arrLen
     
     def addEntry(self, key: str, val: Any) -> bool:
-        if not key or key in self._dict:
+        """
+        if key exists, update val
+        """
+        if not key:
             return False
+        if key not in self._dict:
+            self._dicSize += 1
         self._dict[key] = val
-        self._dicSize += 1
         return True
     
     def delEntry(self, key: str) -> Any:
@@ -84,6 +88,12 @@ class _memSto(object):
         if key in self._dict:
             return copy.deepcopy(self._dict[key])
         return None
+    
+    def getKeys(self) -> list:
+        return copy.deepcopy(list(self._dict.keys()))
+    
+    def getVals(self) -> list:
+        return copy.deepcopy(list(self._dict.values()))
     
     def getSize(self) -> int:
         """return entries size"""
@@ -106,9 +116,6 @@ class MultiSegmentSafetyCache(object):
         self._capacity = capacity  # default 5 buckets
         self._caches = [SafetyCache() for _ in range(capacity)]
 
-        self._arrLen = 0
-        self._dicSize = 0
-
     def _segment(self, key: str = None, index: int = None) -> SafetyCache:
         _des = mod = self._capacity
 
@@ -123,10 +130,9 @@ class MultiSegmentSafetyCache(object):
             raise OutOfBounds()
         return self._caches[_des]
     
-    def addEle(self, ele: Any):
+    def addEle(self, ele: Any) -> bool:
         segment = self._segment(index=self._arrLen)
         if segment.addEle(ele):
-            self._arrLen += 1
             return True
         return False
     
@@ -134,9 +140,7 @@ class MultiSegmentSafetyCache(object):
         assert index >= -self._arrLen and index < self._arrLen, OutOfBounds()
 
         segment = self._segment(index=index)
-        ele = segment.delEle(index // self._capacity)
-        self._arrLen -= 1
-        return ele
+        return segment.delEle(index // self._capacity)
     
     def getEle(self, index: int) -> Any:
         assert index >= -self._arrLen and index < self._arrLen, OutOfBounds()
@@ -146,21 +150,17 @@ class MultiSegmentSafetyCache(object):
     
     def getLen(self) -> int:
         """return list length"""
-        return self._arrLen
+        return sum([segment.getLen() for segment in self._caches])
     
     def addEntry(self, key: str, val: Any) -> bool:
         segment = self._segment(key=key)
         if segment.addEntry(key, val):
-            self._dicSize += 1
             return True
         return False
     
     def delEntry(self, key: str) -> Any:
         segment = self._segment(key=key)
-        val = segment.delEntry(key)
-        if val:
-            self._dicSize -= 1
-        return val
+        return segment.delEntry(key)
     
     def getVal(self, key: str) -> Any:
         segment = self._segment(key=key)
@@ -168,4 +168,4 @@ class MultiSegmentSafetyCache(object):
     
     def getSize(self) -> int:
         """return entries size"""
-        return self._dicSize
+        return sum([segment.getSize() for segment in self._caches])

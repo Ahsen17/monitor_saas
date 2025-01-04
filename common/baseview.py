@@ -37,6 +37,7 @@ class ResourceViewMgr(View):
         }
 
         self._result = {}
+        self._rawFlag = False
 
         super(ResourceViewMgr, self).__init__(*args, **kwargs)
 
@@ -50,6 +51,11 @@ class ResourceViewMgr(View):
     
     def resp(self, code=1001, status=False, data=None, message=""):
         self._result.update({k: v for k, v in locals().items() if k!= "self"})
+
+    def respRaw(self, data: HttpResponse):
+        assert isinstance(data, HttpResponse), TypeError("data must be an instance of HttpResponse.")
+        self._result = data
+        self._rawFlag = True
     
     def _requestDistributes(self, *args, **kwargs):
         """
@@ -84,7 +90,7 @@ class ResourceViewMgr(View):
             getattr(self, operate)(resource, itemId, *args, **kwargs)
         except Exception as e:
             self.resp(code=CODE.INTERNAL_SERVER_ERROR, message=str(e))
-        return _response(**self._result)
+        return _response(**self._result) if not self._rawFlag else self._result
 
         
 class ResourceViewMgrV2(ResourceViewMgr):

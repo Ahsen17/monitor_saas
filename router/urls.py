@@ -5,5 +5,5 @@ from stats import views as ssViews
 urlpatterns = [
     path('metrics/', ssViews.metrics, name='metrics'),
     
-    path('system/version/', ssViews.version, name='version'),
+    path('api/v1/system/configs/', ssViews.SystemConfigsView.as_view(), name='system_configs'),
 ]
