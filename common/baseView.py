@@ -1,7 +1,10 @@
 import http
 import json
+import traceback
 from django.http import HttpResponse
 from django.views import View
+
+from common.logger import djangoLogger as logger
 
 
 CODE = http.HTTPStatus
@@ -42,9 +45,9 @@ class ResourceViewMgr(View):
         super(ResourceViewMgr, self).__init__(*args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
+        assert request.method in self._PERMITTED_METHODS, "Method not allowed."
         
         self._META["HTTP_REQUEST"] = request
-        self._META["METHOD"] = request.method
         self._META["QUERY_STRING"] = request.path
 
         self._requestDistributes(*args, **kwargs)
@@ -62,10 +65,6 @@ class ResourceViewMgr(View):
         """
         desc: http requset distributes: /api/${version}/${resource}/${operate}/${itemId}/
         """
-        reqMethod = self._META["METHOD"]
-        if reqMethod not in self._PERMITTED_METHODS:
-            return self.resp(code=CODE.METHOD_NOT_ALLOWED, message="Method not allowed.")
-
         qStrs = [part for part in self._META['QUERY_STRING'].split('/') if part]
         if qStrs[0] != "api" or len(qStrs) < 4 or qStrs[1] != self._VERSION:
             raise NotImplementedError("Invalid request path.")
@@ -83,6 +82,7 @@ class ResourceViewMgr(View):
             self._META['PARAMS'] = json.loads(_req.body.decode()) if _req.body else _req.GET.dict()
             getattr(self, operate)(resource, itemId, *args, **kwargs)
         except Exception as e:
+            logger.error(f"{str(e)} \n {traceback.exec_format()}")
             self.resp(code=CODE.INTERNAL_SERVER_ERROR, message=str(e))
 
         

@@ -3,7 +3,7 @@ import json
 import os
 from django.http import HttpResponse
 
-from common.baseview import CODE, ResourceViewMgr
+from common.baseView import CODE, ResourceViewMgr
 from configs.config import BASE_DIR, CONFIGS
 from common.logger import djangoLogger as logger
 from stats.utils.collectors import stats

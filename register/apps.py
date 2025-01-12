@@ -1,4 +1,4 @@
-INSTALLED_APPS = [
+APPS = [
     'rest_framework',
 
     'stats',
